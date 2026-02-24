@@ -1,0 +1,17 @@
+[project]
+name = "skill-browser"
+version = "0.1.0"
+description = "Headless browser automation skill for Kiso"
+requires-python = ">=3.11"
+dependencies = [
+    "playwright>=1.44",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+managed = true
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
