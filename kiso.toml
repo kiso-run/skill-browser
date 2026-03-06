@@ -32,3 +32,4 @@ value = { type = "string", required = false, description = "text to type into th
 
 [kiso.deps]
 python = ">=3.11"
+bin = ["playwright"]

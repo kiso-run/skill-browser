@@ -8,7 +8,7 @@ Headless WebKit browser automation skill for [kiso](https://github.com/kiso-run/
 kiso skill install browser
 ```
 
-This clones the repo to `~/.kiso/skills/browser/`, runs `uv sync`, then `deps.sh` which downloads the WebKit browser binary (~50 MB).
+This clones the repo to `~/.kiso/skills/browser/`, then runs `deps.sh` which installs Python dependencies (`uv sync`), system libraries needed by WebKit (`playwright install-deps`), and the WebKit browser binary (`playwright install webkit`).
 
 ## How it works
 
@@ -53,14 +53,6 @@ screenshot
 | `click` | Click element `[N]`. Returns updated snapshot. |
 | `fill` | Type text into element `[N]`. Returns updated snapshot. |
 | `screenshot` | Save a PNG to `workspace/screenshot.png`. |
-
-## System dependencies
-
-On Debian/Ubuntu, WebKit may need additional libraries. If `deps.sh` installs successfully but the browser fails to launch, run:
-
-```bash
-~/.kiso/skills/browser/.venv/bin/playwright install --with-deps webkit
-```
 
 ## License
 
