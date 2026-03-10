@@ -106,6 +106,28 @@ def _urls_match(a: str, b: str) -> bool:
     )
 
 
+_COOKIE_ACCEPT_SELECTORS = [
+    "button:has-text('Accept')", "button:has-text('Accetta')",
+    "button:has-text('Accept all')", "button:has-text('Accetta tutti')",
+    "[id*='cookie'] button:has-text('OK')",
+    ".cookie-banner button.accept", "#onetrust-accept-btn-handler",
+]
+
+
+def _dismiss_cookie_consent(page) -> bool:
+    """Try to dismiss cookie consent banners using common selectors."""
+    for sel in _COOKIE_ACCEPT_SELECTORS:
+        try:
+            btn = page.locator(sel).first
+            if btn.is_visible(timeout=500):
+                btn.click(timeout=2000)
+                page.wait_for_timeout(500)
+                return True
+        except Exception:
+            continue
+    return False
+
+
 def _ensure_page(page, args: dict, state_file: Path) -> None:
     """Navigate to page from explicit url arg or saved state, then save state."""
     url = args.get("url", "").strip()
@@ -137,6 +159,7 @@ def do_navigate(page, args: dict, state_file: Path) -> str:
         save_state(state_file, page.url)
         return f"Already on {url}.\n\n{snapshot(page)}"
     page.goto(url, timeout=30000)
+    _dismiss_cookie_consent(page)
     save_state(state_file, page.url)
     return f"Navigated to: {page.title()}\nURL: {page.url}"
 

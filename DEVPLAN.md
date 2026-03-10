@@ -141,7 +141,7 @@ the value. Reviewer can't verify the fill succeeded.
 
 ---
 
-### M6 — Cookie consent auto-dismiss
+### M6 — Cookie consent auto-dismiss ✅
 
 **Problem:** Cookie banners obscure page content and block interactions.
 
@@ -216,7 +216,7 @@ CAPTCHA warning.
 - [x] **M3** — Read actions: inline URL and selector support
 - [x] **M4** — Navigate dedup (skip if already on URL)
 - [x] **M5** — Fill action echoes filled value
-- [ ] **M6** — Cookie consent auto-dismiss
+- [x] **M6** — Cookie consent auto-dismiss
 - [ ] **M7** — CAPTCHA detection in snapshot
 
 ## Known Issues / Improvement Ideas
