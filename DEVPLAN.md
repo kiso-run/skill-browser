@@ -124,7 +124,7 @@ without calling `page.goto` a second time.
 
 ---
 
-### M5 — Fill action echoes filled value
+### M5 — Fill action echoes filled value ✅
 
 **Problem:** `do_fill()` returns `Filled '{ref}'. URL: ...` without echoing
 the value. Reviewer can't verify the fill succeeded.
@@ -215,7 +215,7 @@ CAPTCHA warning.
 - [x] **M2** — Test suite
 - [x] **M3** — Read actions: inline URL and selector support
 - [x] **M4** — Navigate dedup (skip if already on URL)
-- [ ] **M5** — Fill action echoes filled value
+- [x] **M5** — Fill action echoes filled value
 - [ ] **M6** — Cookie consent auto-dismiss
 - [ ] **M7** — CAPTCHA detection in snapshot
 

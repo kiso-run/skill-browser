@@ -107,8 +107,9 @@ def test_fill_by_number(tmp_path):
     save_state(state_file, "https://example.com")
     el = make_mock_element("input", "", {"type": "text"})
     page = make_mock_page(elements=[el])
-    do_fill(page, {"element": "[1]", "value": "test value"}, state_file)
+    result = do_fill(page, {"element": "[1]", "value": "test value"}, state_file)
     el.fill.assert_called_once_with("test value")
+    assert "with: 'test value'" in result
 
 
 def test_fill_empty_value(tmp_path):

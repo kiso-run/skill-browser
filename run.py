@@ -192,7 +192,7 @@ def do_fill(page, args: dict, state_file: Path) -> str:
     page.goto(current_url, timeout=30000)
     fill_element(page, ref, value)
     save_state(state_file, page.url)
-    return f"Filled {ref!r}. URL: {page.url}\n\n{snapshot(page)}"
+    return f"Filled {ref!r} with: {value!r}. URL: {page.url}\n\n{snapshot(page)}"
 
 
 def do_screenshot(page, args: dict, state_file: Path) -> str:
