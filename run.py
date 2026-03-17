@@ -16,6 +16,14 @@ from pathlib import Path
 
 signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
 
+# Timeout constants.
+_TIMEOUT_GLOBAL_SECS = 60       # SIGALRM hard kill for the whole process
+_TIMEOUT_NAV_MS      = 30_000   # page.goto()
+_TIMEOUT_ACTION_MS   = 10_000   # el.click() / el.fill()
+_TIMEOUT_IDLE_MS     =  5_000   # wait_for_load_state("networkidle")
+_TIMEOUT_COOKIE_MS   =  2_000   # cookie banner click
+_TIMEOUT_PROBE_MS    =    500   # element visibility probe / settle
+
 # Selectors for elements included in the numbered snapshot.
 _SNAPSHOT_SELECTORS = (
     "a, button, input, select, textarea, "
@@ -28,7 +36,15 @@ _SNAPSHOT_SELECTORS = (
 # Entry point
 # ---------------------------------------------------------------------------
 
+def _alarm_handler(*_):
+    print(f"Browser operation timed out after {_TIMEOUT_GLOBAL_SECS}s", file=sys.stderr)
+    sys.exit(1)
+
+
 def main() -> None:
+    signal.signal(signal.SIGALRM, _alarm_handler)
+    signal.alarm(_TIMEOUT_GLOBAL_SECS)
+
     data = json.load(sys.stdin)
     args = data["args"]
     workspace = Path(data.get("workspace", "/tmp"))
@@ -119,9 +135,9 @@ def _dismiss_cookie_consent(page) -> bool:
     for sel in _COOKIE_ACCEPT_SELECTORS:
         try:
             btn = page.locator(sel).first
-            if btn.is_visible(timeout=500):
-                btn.click(timeout=2000)
-                page.wait_for_timeout(500)
+            if btn.is_visible(timeout=_TIMEOUT_PROBE_MS):
+                btn.click(timeout=_TIMEOUT_COOKIE_MS)
+                page.wait_for_timeout(_TIMEOUT_PROBE_MS)
                 return True
         except Exception:
             continue
@@ -132,12 +148,12 @@ def _ensure_page(page, args: dict, state_file: Path) -> None:
     """Navigate to page from explicit url arg or saved state, then save state."""
     url = args.get("url", "").strip()
     if url:
-        page.goto(url, timeout=30000)
+        page.goto(url, timeout=_TIMEOUT_NAV_MS)
     else:
         url = load_state(state_file)
         if not url:
             raise ValueError("No current page. Use action='navigate' or provide 'url'.")
-        page.goto(url, timeout=30000)
+        page.goto(url, timeout=_TIMEOUT_NAV_MS)
     save_state(state_file, page.url)
 
 
@@ -155,10 +171,10 @@ def do_navigate(page, args: dict, state_file: Path) -> str:
         raise ValueError("navigate: 'url' argument is required")
     current = load_state(state_file)
     if current and _urls_match(current, url):
-        page.goto(current, timeout=30000)
+        page.goto(current, timeout=_TIMEOUT_NAV_MS)
         save_state(state_file, page.url)
         return f"Already on {url}.\n\n{snapshot(page)}"
-    page.goto(url, timeout=30000)
+    page.goto(url, timeout=_TIMEOUT_NAV_MS)
     _dismiss_cookie_consent(page)
     save_state(state_file, page.url)
     return f"Navigated to: {page.title()}\nURL: {page.url}"
@@ -168,7 +184,7 @@ def do_snapshot(page, args: dict, state_file: Path) -> str:
     current_url = load_state(state_file)
     if not current_url:
         raise ValueError("No current page. Use action='navigate' first.")
-    page.goto(current_url, timeout=30000)
+    page.goto(current_url, timeout=_TIMEOUT_NAV_MS)
     save_state(state_file, page.url)
     return snapshot(page)
 
@@ -198,7 +214,7 @@ def do_click(page, args: dict, state_file: Path) -> str:
     ref = args.get("element", "").strip()
     if not ref:
         raise ValueError("click: 'element' argument is required")
-    page.goto(current_url, timeout=30000)
+    page.goto(current_url, timeout=_TIMEOUT_NAV_MS)
     click_element(page, ref)
     save_state(state_file, page.url)
     return f"Clicked {ref!r}. URL: {page.url}\n\n{snapshot(page)}"
@@ -212,7 +228,7 @@ def do_fill(page, args: dict, state_file: Path) -> str:
     if not ref:
         raise ValueError("fill: 'element' argument is required")
     value = args.get("value", "")
-    page.goto(current_url, timeout=30000)
+    page.goto(current_url, timeout=_TIMEOUT_NAV_MS)
     fill_element(page, ref, value)
     save_state(state_file, page.url)
     return f"Filled {ref!r} with: {value!r}. URL: {page.url}\n\n{snapshot(page)}"
@@ -222,7 +238,7 @@ def do_screenshot(page, args: dict, state_file: Path) -> str:
     current_url = load_state(state_file)
     if not current_url:
         raise ValueError("No current page. Use action='navigate' first.")
-    page.goto(current_url, timeout=30000)
+    page.goto(current_url, timeout=_TIMEOUT_NAV_MS)
     out_path = state_file.parent.parent / "screenshot.png"
     page.screenshot(path=str(out_path))
     return f"Screenshot saved: {out_path}"
@@ -420,16 +436,16 @@ def resolve_element(page, ref: str):
 
 def click_element(page, ref: str) -> None:
     el = resolve_element(page, ref)
-    el.click()
+    el.click(timeout=_TIMEOUT_ACTION_MS)
     try:
-        page.wait_for_load_state("networkidle", timeout=5000)
+        page.wait_for_load_state("networkidle", timeout=_TIMEOUT_IDLE_MS)
     except Exception:
         pass  # navigation may not have occurred
 
 
 def fill_element(page, ref: str, value: str) -> None:
     el = resolve_element(page, ref)
-    el.fill(value)
+    el.fill(value, timeout=_TIMEOUT_ACTION_MS)
 
 
 # ---------------------------------------------------------------------------

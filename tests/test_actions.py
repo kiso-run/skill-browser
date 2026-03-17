@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import MagicMock, call
 
 from run import (
+    _TIMEOUT_ACTION_MS,
     click_element,
     do_click,
     do_fill,
@@ -108,7 +109,7 @@ def test_fill_by_number(tmp_path):
     el = make_mock_element("input", "", {"type": "text"})
     page = make_mock_page(elements=[el])
     result = do_fill(page, {"element": "[1]", "value": "test value"}, state_file)
-    el.fill.assert_called_once_with("test value")
+    el.fill.assert_called_once_with("test value", timeout=_TIMEOUT_ACTION_MS)
     assert "with: 'test value'" in result
 
 
@@ -118,7 +119,7 @@ def test_fill_empty_value(tmp_path):
     el = make_mock_element("input", "", {"type": "text"})
     page = make_mock_page(elements=[el])
     do_fill(page, {"element": "[1]"}, state_file)
-    el.fill.assert_called_once_with("")
+    el.fill.assert_called_once_with("", timeout=_TIMEOUT_ACTION_MS)
 
 
 # ---------------------------------------------------------------------------
@@ -206,4 +207,4 @@ def test_fill_element_calls_fill():
     el = make_mock_element("input", "", {"type": "text"})
     page = make_mock_page(elements=[el])
     fill_element(page, "[1]", "hello world")
-    el.fill.assert_called_once_with("hello world")
+    el.fill.assert_called_once_with("hello world", timeout=_TIMEOUT_ACTION_MS)

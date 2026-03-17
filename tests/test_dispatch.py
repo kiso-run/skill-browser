@@ -2,12 +2,13 @@
 import json
 import subprocess
 import sys
+import unittest.mock
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from run import dispatch, save_state
+from run import dispatch, save_state, _TIMEOUT_ACTION_MS, _TIMEOUT_GLOBAL_SECS
 from conftest import make_mock_element, make_mock_page
 
 ROOT = Path(__file__).parent.parent
@@ -66,7 +67,7 @@ def test_dispatch_click(tmp_path):
     el = make_mock_element("button", "Go")
     ctx, page = make_context(elements=[el])
     result = dispatch("click", {"element": "[1]"}, ctx, state_file)
-    el.click.assert_called_once()
+    el.click.assert_called_once_with(timeout=_TIMEOUT_ACTION_MS)
     assert "Clicked" in result
 
 
@@ -80,7 +81,7 @@ def test_dispatch_fill(tmp_path):
     el = make_mock_element("input", "", {"type": "text"})
     ctx, page = make_context(elements=[el])
     result = dispatch("fill", {"element": "[1]", "value": "hello"}, ctx, state_file)
-    el.fill.assert_called_once_with("hello")
+    el.fill.assert_called_once_with("hello", timeout=_TIMEOUT_ACTION_MS)
     assert "Filled" in result
 
 
@@ -157,3 +158,28 @@ def test_main_missing_playwright(tmp_path, make_input):
     )
     # The import will fail differently; just verify a non-zero exit
     assert result.returncode != 0
+
+
+# ---------------------------------------------------------------------------
+# main() — global timeout via SIGALRM
+# ---------------------------------------------------------------------------
+
+def test_main_sets_global_timeout(make_input):
+    """main() sets a 60s SIGALRM before doing any work."""
+    import signal as sig
+    import io
+
+    input_data = make_input(action="navigate", url="https://example.com")
+
+    with patch("signal.signal") as mock_sig, \
+         patch("signal.alarm") as mock_alarm, \
+         patch("sys.stdin", io.StringIO(json.dumps(input_data))), \
+         patch("playwright.sync_api.sync_playwright"):
+        from run import main
+        try:
+            main()
+        except Exception:
+            pass
+
+        mock_sig.assert_any_call(sig.SIGALRM, unittest.mock.ANY)
+        mock_alarm.assert_called_with(_TIMEOUT_GLOBAL_SECS)

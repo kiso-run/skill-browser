@@ -219,6 +219,61 @@ CAPTCHA warning.
 - [x] **M5** — Fill action echoes filled value
 - [x] **M6** — Cookie consent auto-dismiss
 - [x] **M7** — CAPTCHA detection in snapshot
+- [x] **M8** — Usage guide rewrite + operation timeouts
+
+### M8 — Usage guide rewrite + operation timeouts
+
+**Problem:** (1) kiso.toml manca la riga `guide:` che il planner di Kiso
+tratta come regola obbligatoria — senza di essa il planner può usare il browser
+per fare ricerche web anziché navigare URL noti. (2) Se una pagina non risponde,
+il processo resta appeso indefinitamente e blocca la sessione Kiso. (3) `el.click()`
+e `el.fill()` non hanno timeout — se l'elemento non è interagibile, stallo.
+
+**Files:** `kiso.toml`, `run.py`
+
+**Changes:**
+
+1. **kiso.toml** — riscrivere `summary` e `usage_guide` con la riga `guide:`:
+   ```toml
+   summary = "Navigate to specific URLs, inspect page elements, click, fill forms, take screenshots"
+   usage_guide = """\
+   guide: This tool is for navigating to SPECIFIC known URLs and interacting with those pages. \
+   NEVER use it for web searches — use the search task type or the websearch tool instead. \
+   Browser is slow, may hit CAPTCHAs, and has no search capability.
+   ...
+   """
+   ```
+
+2. **run.py — global 60s timeout** in `main()`:
+   ```python
+   signal.signal(signal.SIGALRM, lambda *_: (
+       print("Browser operation timed out after 60s", file=sys.stderr),
+       sys.exit(1),
+   ))
+   signal.alarm(60)
+   ```
+
+3. **run.py — timeout su click e fill**:
+   ```python
+   def click_element(page, ref: str) -> None:
+       el = resolve_element(page, ref)
+       el.click(timeout=10000)  # 10s timeout
+       ...
+
+   def fill_element(page, ref: str, value: str) -> None:
+       el = resolve_element(page, ref)
+       el.fill(value, timeout=10000)  # 10s timeout
+   ```
+
+**Note:** l'azione `text` richiesta nel ticket esiste già (`do_text` + `extract_text`).
+
+- [x] Aggiornare `summary` e `usage_guide` in kiso.toml
+- [x] Aggiungere global timeout 60s in `main()`
+- [x] Aggiungere `timeout=10000` a `el.click()` e `el.fill()`
+- [x] Aggiornare test se necessario
+- [x] Estrarre costanti timeout + handler SIGALRM come funzione named (da /simplify)
+
+---
 
 ## Known Issues / Improvement Ideas
 
@@ -226,8 +281,8 @@ CAPTCHA warning.
   (against a local HTML fixture server) would catch Playwright API mismatches
 - Screenshots are full-page PNG only — no element-scoped or viewport-only
   option, no WebP support
-- No timeout configuration — hardcoded 30 s for navigation, 5 s for
-  networkidle after click
+- Timeout constants are module-level in `run.py` but not user-configurable
+  (no env var or kiso.toml override)
 - No scroll/pagination support — long pages require manual snapshot + click
   workflows
 - `extract_text` noise stripping mutates the DOM (removes elements) — if the

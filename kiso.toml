@@ -5,33 +5,27 @@ version = "0.1.0"
 description = "Headless browser automation via Playwright WebKit"
 
 [kiso.tool]
-summary = "Control a headless WebKit browser: navigate pages, read content, extract links, inspect forms, click, fill, take screenshots"
+summary = "Navigate to specific URLs, inspect page elements, click, fill forms, take screenshots"
 usage_guide = """\
-Use this tool to automate web browsing: navigate to URLs, read page content, extract links, inspect forms, interact with elements, take screenshots.
+guide: This tool is for navigating to SPECIFIC known URLs and interacting with those pages. \
+NEVER use it for web searches — use the search task type or the websearch tool instead. \
+Browser is slow, may hit CAPTCHAs, and has no search capability.
 
 Actions:
-  navigate   — go to a URL (required first step)
-  text       — get visible text content (strips nav, ads, boilerplate)
-  links      — get a numbered list of page links with text and href
-  forms      — get structured form field information
+  navigate   — go to a specific URL (required first step)
   snapshot   — list interactive elements numbered [1], [2], ...
   click      — click element [N] or CSS selector
   fill       — type text into element [N] or CSS selector
+  text       — get visible text content (strips nav, ads, boilerplate)
+  links      — get a numbered list of page links with text and href
+  forms      — get structured form field information
   screenshot — save a PNG to the session workspace
 
-Choosing the right action:
-  - "what is this page about?" → text
-  - "what are the news headlines?" → text
-  - "give me the links" → links
-  - "fill the contact form" → forms, then fill/click
-  - "click on X" → snapshot (to find elements), then click
+Workflow: always start with 'navigate' to a known URL, then 'snapshot' to see the page elements, \
+then use element numbers with 'click' or 'fill'.
 
-The text, links, and forms actions accept an optional 'url' arg to navigate \
-and extract in one step. They also accept an optional 'selector' arg to scope \
-extraction to a CSS selector (e.g. selector='article' or selector='main').
-
-Workflow: always start with 'navigate' or use 'url' on read actions, then use \
-the appropriate action for the task.
+Example: action='navigate' url='https://example.com', then action='snapshot', \
+then action='fill' element='[2]' value='hello', then action='click' element='[3]'.
 
 Browser state (cookies, localStorage, session) persists between calls within the same session."""
 
