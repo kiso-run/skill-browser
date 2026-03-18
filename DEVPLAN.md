@@ -426,6 +426,43 @@ should be properly closed.
 - [x] **M9** — Complete test coverage
 - [x] **M10** — Functional tests (subprocess contract)
 - [x] **M11** — SIGTERM graceful shutdown test
+- [ ] **M12** — kiso.toml validation test
+- [ ] **M13** — State file race condition test
+
+### M12 — kiso.toml validation test
+
+**Problem:** No test verifies `kiso.toml` consistency with code.
+
+**Files:** `tests/test_manifest.py` (new)
+
+**Change:**
+
+1. Parse `kiso.toml`, extract declared arg names
+2. Verify each appears in `run.py`
+3. Verify TOML structure is valid
+
+- [ ] Implement manifest validation test
+
+---
+
+### M13 — State file race condition test
+
+**Problem:** Two concurrent invocations on the same workspace could
+corrupt `state.json`. No test verifies this scenario.
+
+**Files:** `tests/test_state.py` (add)
+
+**Change:**
+
+1. Write state file from two threads simultaneously
+2. Read back — should be valid JSON (not corrupted)
+3. This is a documentation-of-risk test: since `write_text` is not atomic,
+   document the limitation
+
+- [ ] Implement concurrent state write test
+- [ ] Document limitation in Known Issues if confirmed
+
+---
 
 ## Known Issues / Improvement Ideas
 
