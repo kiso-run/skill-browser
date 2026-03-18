@@ -316,6 +316,117 @@ Total test count was 109; gaps left regressions possible.
 
 ---
 
+### M10 — Functional tests (subprocess contract)
+
+**Problem:** The `run_tool` fixture exists in `conftest.py` but no test uses
+it. All 133 tests call functions directly with mocked Playwright objects.
+The `main()` entry point — including JSON parsing, Playwright launch,
+browser context lifecycle, error routing, and the SIGALRM global timeout —
+is never tested end-to-end.
+
+**Files:** `tests/test_functional.py` (new)
+
+**Change:**
+
+Since Playwright + WebKit may not be installed in CI, functional tests
+should be **skippable** (`@pytest.mark.skipif(not has_playwright, ...)`).
+Tests that don't need a real browser (error paths) should always run.
+
+**Always-run tests (no browser needed):**
+
+1. **Error — missing Playwright:**
+   - Run `run.py` with `PYTHONPATH` that excludes playwright
+   - Assert: stderr contains `Playwright is not installed`, exit code 1
+
+2. **Error — unknown action:**
+   - stdin: `{args: {action: "nope"}, ...}`
+   - (Will fail at Playwright import or at dispatch — either way exit 1)
+
+3. **Malformed input — invalid JSON:**
+   - Send `"not json"` on stdin
+   - Assert: exit code 1
+
+4. **Malformed input — missing args:**
+   - stdin: `{}`
+   - Assert: exit code 1
+
+**Browser-dependent tests (skip if no Playwright):**
+
+5. **Happy path — navigate + text extraction:**
+   - Serve a local HTML fixture (`http.server` on random port)
+   - stdin: `{args: {action: "navigate", url: "http://localhost:PORT/page.html"}, ...}`
+   - Assert: stdout contains page title, exit code 0
+   - Follow-up: action=text → stdout contains page body text
+
+6. **Happy path — snapshot + click:**
+   - Navigate to fixture page with a link
+   - action=snapshot → stdout contains numbered `[1]` elements
+   - action=click, element="1" → stdout contains clicked result
+
+7. **Happy path — fill + forms:**
+   - Navigate to fixture page with a form
+   - action=forms → stdout contains form fields
+   - action=fill, element="1", value="test" → stdout contains `with: 'test'`
+
+8. **Happy path — screenshot:**
+   - Navigate, then action=screenshot
+   - Assert: file saved at expected path, stdout contains path
+
+9. **State persistence across invocations:**
+   - Navigate to URL (call 1)
+   - action=text without url arg (call 2) — should use saved state
+   - Assert: text returned matches fixture page content
+
+10. **Navigate dedup:**
+    - Navigate to URL (call 1)
+    - Navigate to same URL (call 2) — should return "Already on"
+
+11. **SIGALRM global timeout:**
+    - Serve a page that hangs (never responds)
+    - Assert: process exits 1 within ~65s, stderr contains "timed out"
+
+- [ ] Create HTML fixture files for local test server
+- [ ] Create `_serve_fixture()` helper (starts http.server, returns URL, cleans up)
+- [ ] Implement error path tests (always run, no browser needed)
+- [ ] Implement browser-dependent tests (skippable)
+- [ ] All tests pass (existing 133 + new functional)
+
+---
+
+### M11 — SIGTERM graceful shutdown test
+
+**Problem:** `run.py` registers `signal.signal(signal.SIGTERM, ...)` but
+no test verifies clean exit on SIGTERM. The Playwright browser context
+should be properly closed.
+
+**Files:** `tests/test_functional.py` (add)
+
+**Change:**
+
+1. Start `run.py` with a fixture page that delays load
+2. Send `SIGTERM` after 1s
+3. Assert: process exits 0 (graceful)
+4. Assert: no orphan WebKit processes left
+
+- [ ] Implement SIGTERM test (skip if no Playwright)
+- [ ] Passes on Linux
+
+---
+
+## Milestone Checklist (updated)
+
+- [x] **M1** — Initial tool scaffold
+- [x] **M2** — Test suite
+- [x] **M3** — Read actions: inline URL and selector support
+- [x] **M4** — Navigate dedup (skip if already on URL)
+- [x] **M5** — Fill action echoes filled value
+- [x] **M6** — Cookie consent auto-dismiss
+- [x] **M7** — CAPTCHA detection in snapshot
+- [x] **M8** — Usage guide rewrite + operation timeouts
+- [x] **M9** — Complete test coverage
+- [ ] **M10** — Functional tests (subprocess contract)
+- [ ] **M11** — SIGTERM graceful shutdown test
+
 ## Known Issues / Improvement Ideas
 
 - No integration tests — all tests use mocks; a real-browser test suite
