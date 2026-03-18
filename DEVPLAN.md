@@ -426,7 +426,7 @@ should be properly closed.
 - [x] **M9** — Complete test coverage
 - [x] **M10** — Functional tests (subprocess contract)
 - [x] **M11** — SIGTERM graceful shutdown test
-- [ ] **M12** — kiso.toml validation test
+- [x] **M12** — kiso.toml validation test
 - [ ] **M13** — State file race condition test
 
 ### M12 — kiso.toml validation test
@@ -441,7 +441,7 @@ should be properly closed.
 2. Verify each appears in `run.py`
 3. Verify TOML structure is valid
 
-- [ ] Implement manifest validation test
+- [x] Implement manifest validation test
 
 ---
 
