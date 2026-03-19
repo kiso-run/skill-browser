@@ -64,10 +64,20 @@ def main() -> None:
         sys.exit(1)
 
     with sync_playwright() as p:
-        context = p.webkit.launch_persistent_context(
-            user_data_dir=str(browser_dir / "profile"),
-            headless=True,
-        )
+        try:
+            context = p.webkit.launch_persistent_context(
+                user_data_dir=str(browser_dir / "profile"),
+                headless=True,
+            )
+        except Exception as exc:
+            if "Executable doesn't exist" in str(exc):
+                print(
+                    "Browser binaries missing. Reinstall with: "
+                    "kiso tool remove browser && kiso tool install browser",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            raise
         try:
             result = dispatch(action, args, context, state_file)
             print(result)
