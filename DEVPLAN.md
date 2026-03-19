@@ -479,3 +479,15 @@ corrupt `state.json`. No test verifies this scenario.
 - No JavaScript execution action — cannot run arbitrary JS snippets
 - Element resolution re-queries the full snapshot selector list on every
   click/fill — could cache between calls within the same invocation
+
+## M-next — Fix Playwright browser binaries lost after container rebuild
+
+**Problem:** After a Docker container rebuild (update, data reset), Playwright browser binaries in `/root/.cache/ms-playwright/` are lost. The tool appears installed but fails with `Executable doesn't exist at .../pw_run.sh`. The core's repair mechanism doesn't catch this because `playwright` isn't in the `[kiso.deps] bin` list.
+
+**Fix deps.sh:**
+- [ ] Add `playwright install webkit` (or the specific browser used) to `deps.sh`. Currently only system packages are installed. The Playwright binary download must also happen during install/repair.
+- [ ] Ensure `deps.sh` runs the playwright command from the tool's venv: `.venv/bin/playwright install webkit`
+
+**Fix run.py error handling:**
+- [ ] Catch `Executable doesn't exist` errors from Playwright launch and return a clear message: "Playwright browser binaries missing. Re-install with: kiso tool remove browser && kiso tool install browser"
+- [ ] This gives the reviewer an actionable replan hint instead of a raw traceback
