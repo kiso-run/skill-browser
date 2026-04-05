@@ -52,6 +52,13 @@ that work. The DEVPLAN already describes the browser as `v0.2.0`; when
 the validator work lands, the manifest/versioning must be kept aligned
 with that `0.2.x` line.
 
+Test impact from audit:
+- runtime/browser integration coverage is already strong; new tests
+  should target only the lightweight validator behavior
+- add `tests/test_validator.py` for action-specific required args
+- extend `tests/test_manifest.py` only for planner-facing facts like
+  action -> required-arg mapping; do not snapshot the whole guide text
+
 ## Capabilities
 
 | Action     | Description                                        | Status |
@@ -517,3 +524,6 @@ this to auto-route session workspace files to the right tool. Vocabulary: `image
 **Changes:**
 - [x] Add `consumes = ["web_page"]` to `[kiso.tool]` in kiso.toml
 - [ ] Enrich `usage_guide` with concrete arg examples for each action
+- [ ] Add `tests/test_validator.py` for `navigate.url`, `click.element`, `fill.element`, and `fill.value`
+- [ ] Extend `tests/test_manifest.py` with concise planner-facing required-arg assertions
+- [ ] Keep the manifest/version aligned with the `0.2.x` line when this structural change lands
