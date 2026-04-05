@@ -38,6 +38,20 @@ tool-browser/
   banners, and ads before extracting body text; prefers `<main>`/`<article>`
   containers.
 
+## Planned Structural Follow-up
+
+The core devplan now proposes an optional lightweight `validator.py`
+hook for tool plugins. For `tool-browser`, the intended scope is narrow:
+early semantic rejection of action-specific missing args such as
+`navigate.url`, `click.element`, `fill.element`, and `fill.value`,
+without re-encoding the whole runtime in the validator.
+
+This counts as a structural compatibility change at the core/plugin
+boundary. The browser tool should be on the `0.2.x` release line for
+that work. The DEVPLAN already describes the browser as `v0.2.0`; when
+the validator work lands, the manifest/versioning must be kept aligned
+with that `0.2.x` line.
+
 ## Capabilities
 
 | Action     | Description                                        | Status |
